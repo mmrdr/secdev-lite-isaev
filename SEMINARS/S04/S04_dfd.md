@@ -65,6 +65,34 @@ flowchart LR
 
 ---
 
+## Описание элементов DFD
+
+### Узлы (Nodes)
+
+| Узел | Описание | Trust Boundary |
+|------|----------|----------------|
+| **U (Клиент)** | Пользовательское приложение | Internet |
+| **A (API Gateway)** | Точка входа, валидация, аутентификация | Service |
+| **S (File & Export service)** | Основная бизнес-логика | Service |
+| **D (PostgreSQL)** | Хранение данных | Service |
+| **Q (Vendor API)** | Внешняя интеграция | External |
+
+### Потоки данных (Data Flows)
+
+| Поток | Тип данных | NFR связи | Описание |
+|-------|------------|-----------|----------|
+| **U → A** | JWT + multipart/form-data| NFR-001 (InputValidation) | Валидированные запросы |
+| **U → A** | JWT + multipart/form-data| NFR-002 (InputValidation) | Валидированные запросы |
+| **U → A** | JWT + multipart/form-data| NFR-003 (Rate Limiting) | Защита от DoS |
+| **U → A** | JWT + HTTPS | NFR-004(Rate Limiting) | Защита от DoS |
+| **U → A** | JWT + HTTPS | NFR-005(Privacy/PII) | Персональные данные |
+| **U → A** | JWT + HTTPS | NFR-006(Perfomance) | SLO |
+| **S → Q** | gRPC | NFR-007 (Observability) | Трассировка |
+| **S → Q** | gRPC | NFR-008 (CircuitBreaker) | Стабильность работы сервиса |
+| **S → Q** | gRPC | NFR-009 (Resilience-Timeout) | Защита от зависания |
+
+---
+
 ## Как адаптировать под свой кейс
 
 1. **Переименуйте узлы** (например, `A` → `Public API`, `S` → `Orders Service`, `D` → `PostgreSQL`).

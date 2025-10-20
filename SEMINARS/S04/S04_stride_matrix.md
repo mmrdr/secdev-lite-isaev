@@ -35,9 +35,15 @@
 
 | Element                      | Data/Boundary | Threat (S/T/R/I/D/E) | Description                                            | NFR link (ID)                   | Mitigation idea (ADR later)               |
 | ---------------------------- | ------------- | -------------------- | ------------------------------------------------------ | ------------------------------- | ----------------------------------------- |
-| Edge: Internet → API         | JWT / public  | S                    | Повтор/подмена токена, reuse истёкшего/украденного JWT | NFR-AuthN, NFR-RateLimit        | JWT TTL+Refresh, rate limit на `/auth/*`  |
-| Node: Service                | Logs          | I                    | PII в логах и сообщениях об ошибках                    | NFR-Privacy/PII, NFR-API-Errors | Маскирование PII, RFC7807 без стэктрейсов |
-| Edge: Service → External API | HTTP/gRPC     | D                    | Залипание без timeout/retry/circuit breaker            | NFR-Timeouts/Retry/CB           | Timeout≤2s, retry≤3 с джиттером, CB       |
+| Edge: Internet → API | JWT / file | D | Исчерпывание ресурсов сервера за счет слишком большых файлов | NFR-001 | Установить размер для `POST /api/files/avatar`: размер тела ≤ 15 MiB  |
+| Edge: Internet → API | JWT / file | T | Подмена типа файла для загрузки вредоносного кода под видом легитимного файла | NFR-002 | Проверка на mime-type |
+| Edge: Internet → API         | JWT / file  | S | Перегрузка сервера множественными запросами на загрузку аватаров | NFR-003        | rate limit на `POST /api/files/avatar`  |
+| Edge: Internet → API | JWT / http | S | Перегрузка сервера множественными запросами на экспорт данных | NFR-004 | rate limit на `GET /api/export?format=csv\|json` |
+| Edge: Internet → API | JWT / http | I | Утечка персональных данных (PII) через логи и детальные сообщения об ошибках | NFR-005 | Маскирование PII, RFC7807 без стэктрейсов |
+| Edge: Internet → API | JWT / http | D | Деградация производительности при экспорте больших объемов данных | NFR-006 | P95 латентность на `GET /api/export?format=csv\|json`|
+| Edge: Service → External API | HTTP/gRPC | R | Невозможность отслеживания запросов между сервисами без correlation_id  | NFR-007 | log pattern: `json-struct`, создание correlation_id на каждом этапе логов |
+| Edge: Service → External API| HTTP/gRPC | D | Каскадный отказ при недоступности внешнего API без изоляции сбоев | NFR-008 | client config: `cb`, log: `circuit_breaker_on` |
+| Edge: Service → External API | HTTP/gRPC | D | Блокировка потока выполнения при зависании внешнего API | NFR-009 | client config: `timeout/retry` |
 
 > После заполнения матрицы **перенесите уникальные/объединённые риски** в `S04_risk_scoring.md` для приоритизации L×I (1-5) и выбора Top-5.
 
